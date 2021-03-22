@@ -1,4 +1,5 @@
 import environment
+import numpy as np
 from utils import get_landing_zone, get_angle, get_velocity, get_position, get_fuel, tests
 get_landing_zone()
 # Lunar Lander Environment
@@ -36,7 +37,7 @@ class LunarLanderEnvironment(environment.BaseEnvironment):
         # use the above observations to decide what the reward will be, and if the
         # agent is in a terminal state.
         # Recall - if the agent crashes or lands terminal needs to be set to True
-        print( observation )
+        #print( observation )
         # YOUR CODE HERE
         crashed = False;
         landed = False
@@ -58,7 +59,7 @@ class LunarLanderEnvironment(environment.BaseEnvironment):
         
             
         landed_successfully = landed and not crashed
-        print( ' is landed: ', landed, ' is crashed: ', crashed, ' fuel: ', fuel )
+        #print( ' is landed: ', landed, ' is crashed: ', crashed, ' fuel: ', fuel )
         #raise NotImplementedError()
         
         self.reward_obs_term = (reward, observation, terminal)
