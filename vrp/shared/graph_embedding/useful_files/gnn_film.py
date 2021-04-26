@@ -5,6 +5,9 @@ import tensorflow as tf
 
 from shared.graph_embedding.useful_files.utils import get_activation, get_aggregation_function, SMALL_NUMBER
 
+def layer_norm(input_tensor, name=None):
+  """Run layer normalization on the last dimension of the tensor."""
+  return tf.keras.layers.LayerNormalization(name=name,axis=-1,epsilon=1e-12,dtype=tf.float32)(input_tensor)
 
 def sparse_gnn_film_layer(node_embeddings: tf.Tensor,
                           adjacency_lists: List[tf.Tensor],
@@ -119,7 +122,7 @@ def sparse_gnn_film_layer(node_embeddings: tf.Tensor,
         new_node_states = aggregated_messages
         # new_node_states = activation_fn(new_node_states)
 
-        cur_node_states = tf.contrib.layers.layer_norm(new_node_states)
+        cur_node_states = layer_norm(new_node_states)
 
     return cur_node_states
 
@@ -213,6 +216,6 @@ def sparse_gnn_film_layer_with_dist(node_embeddings: tf.Tensor,
         new_node_states = aggregated_messages
         # new_node_states = activation_fn(new_node_states)
 
-        cur_node_states = tf.contrib.layers.layer_norm(new_node_states)
+        cur_node_states = layer_norm(new_node_states)
 
     return cur_node_states
