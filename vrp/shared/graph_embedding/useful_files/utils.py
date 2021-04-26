@@ -22,13 +22,13 @@ def get_gated_unit(units: int, gated_unit: str, activation_function: str):
 
 def get_aggregation_function(aggregation_fun: Optional[str]):
     if aggregation_fun in ['sum', 'unsorted_segment_sum']:
-        return tf.unsorted_segment_sum
+        return tf.math.unsorted_segment_sum
     if aggregation_fun in ['max', 'unsorted_segment_max']:
-        return tf.unsorted_segment_max
+        return tf.math.unsorted_segment_max
     if aggregation_fun in ['mean', 'unsorted_segment_mean']:
-        return tf.unsorted_segment_mean
+        return tf.math.unsorted_segment_mean
     if aggregation_fun in ['sqrt_n', 'unsorted_segment_sqrt_n']:
-        return tf.unsorted_segment_sqrt_n
+        return tf.math.unsorted_segment_sqrt_n
     else:
         raise ValueError("Unknown aggregation function '%s'!" % aggregation_fun)
 
@@ -51,7 +51,7 @@ def get_activation(activation_fun: Optional[str]):
         return tf.nn.selu
     if activation_fun == 'gelu':
         def gelu(input_tensor):
-            cdf = 0.5 * (1.0 + tf.erf(input_tensor / tf.sqrt(2.0)))
+            cdf = 0.5 * (1.0 + tf.math.erf(input_tensor / tf.sqrt(2.0)))
             return input_tensor * cdf
         return gelu
     else:
@@ -64,9 +64,9 @@ def micro_f1(logits, labels):
     predicted = tf.cast(predicted, dtype=tf.int32)
     labels = tf.cast(labels, dtype=tf.int32)
 
-    true_pos = tf.count_nonzero(predicted * labels)
-    false_pos = tf.count_nonzero(predicted * (labels - 1))
-    false_neg = tf.count_nonzero((predicted - 1) * labels)
+    true_pos = tf.math.count_nonzero(predicted * labels)
+    false_pos = tf.math.count_nonzero(predicted * (labels - 1))
+    false_neg = tf.math.count_nonzero((predicted - 1) * labels)
 
     precision = true_pos / (true_pos + false_pos)
     recall = true_pos / (true_pos + false_neg)
@@ -106,21 +106,21 @@ class MLP(object):
 
         self.__dropout_rate = dropout_rate
         self.__name = name
-        with tf.variable_scope(self.__name):
+        with tf.compat.v1.variable_scope(self.__name):
             self.__layers = []  # type: List[tf.layers.Dense]
             for hidden_layer_size in hidden_layer_sizes:
-                self.__layers.append(tf.layers.Dense(units=hidden_layer_size,
+                self.__layers.append(tf.compat.v1.layers.Dense(units=hidden_layer_size,
                                                      use_bias=use_biases,
                                                      activation=activation_fun))
             # Output layer:
-            self.__layers.append(tf.layers.Dense(units=out_size,
+            self.__layers.append(tf.compat.v1.layers.Dense(units=out_size,
                                                  use_bias=use_biases,
                                                  activation=None))
 
     def __call__(self, input: tf.Tensor) -> tf.Tensor:
-        with tf.variable_scope(self.__name):
+        with tf.compat.v1.variable_scope(self.__name):
             activations = input
             for layer in self.__layers[:-1]:
-                activations = tf.nn.dropout(activations, keep_prob = 1 - self.__dropout_rate)
+                activations = tf.nn.dropout(activations, rate = 1 - (1 - self.__dropout_rate))
                 activations = layer(activations)
             return self.__layers[-1](activations)

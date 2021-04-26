@@ -1,3 +1,4 @@
+
 from typing import List, Optional
 import tensorflow as tf
 
@@ -55,9 +56,9 @@ def sparse_gnn_film_layer(node_embeddings: tf.Tensor,
     Returns:
         float32 tensor of shape [V, state_dim]
     """
-    num_nodes = tf.shape(node_embeddings, out_type=tf.int32)[0]
+    num_nodes = tf.shape(input=node_embeddings, out_type=tf.int32)[0]
     if state_dim is None:
-        state_dim = tf.shape(node_embeddings, out_type=tf.int32)[1]
+        state_dim = tf.shape(input=node_embeddings, out_type=tf.int32)[1]
 
     # === Prepare things we need across all timesteps:
     activation_fn = get_activation(activation_function)
@@ -138,9 +139,9 @@ def sparse_gnn_film_layer_with_dist(node_embeddings: tf.Tensor,
     """
     proba = True
 
-    num_nodes = tf.shape(node_embeddings, out_type=tf.int32)[0]
+    num_nodes = tf.shape(input=node_embeddings, out_type=tf.int32)[0]
     if state_dim is None:
-        state_dim = tf.shape(node_embeddings, out_type=tf.int32)[1]
+        state_dim = tf.shape(input=node_embeddings, out_type=tf.int32)[1]
 
     # === Prepare things we need across all timesteps:
     activation_fn = get_activation(activation_function)
@@ -172,12 +173,12 @@ def sparse_gnn_film_layer_with_dist(node_embeddings: tf.Tensor,
             edge_sources = tf.cast(adjacency_list_for_edge_type[:, 0],dtype=tf.int32)
             edge_targets = tf.cast(adjacency_list_for_edge_type[:, 1],dtype=tf.int32)
             dist_between_edges= adjacency_list_for_edge_type[:,2]   # get only the distance matrix
-            max_dist = tf.reduce_max(dist_between_edges)
+            max_dist = tf.reduce_max(input_tensor=dist_between_edges)
             dist_between_edges = tf.expand_dims(dist_between_edges,axis=1)
             dist_between_edges = tf.tile(dist_between_edges,[1,state_dim])  # Put it at the right dimension
 
             if proba:
-                random_take = tf.random.uniform(shape=tf.shape(dist_between_edges), minval=tf.zeros_like(max_dist),maxval=max_dist)
+                random_take = tf.random.uniform(shape=tf.shape(input=dist_between_edges), minval=tf.zeros_like(max_dist),maxval=max_dist)
                 dist_between_edges = tf.cast(tf.less(dist_between_edges,random_take),dtype=tf.float32) # We only take the one closer than randomly distributed
 
             edge_source_states = \

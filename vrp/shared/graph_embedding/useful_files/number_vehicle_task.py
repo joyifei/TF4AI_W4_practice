@@ -196,12 +196,12 @@ class Nb_Vehicles_Task(Sparse_Graph_Task):
                 be extended with task-specific operations.
         """
         placeholders['initial_node_features'] = \
-            tf.placeholder(dtype=tf.float32, shape=[None, self.__initial_node_feature_size], name='initial_node_features')
+            tf.compat.v1.placeholder(dtype=tf.float32, shape=[None, self.__initial_node_feature_size], name='initial_node_features')
         placeholders['adjacency_lists'] = \
-            [tf.placeholder(dtype=tf.float32, shape=[None, 3], name='adjacency_e%s' % e)
+            [tf.compat.v1.placeholder(dtype=tf.float32, shape=[None, 3], name='adjacency_e%s' % e)
              for e in range(self.num_edge_types)]
         placeholders['type_to_num_incoming_edges'] = \
-            tf.placeholder(dtype=tf.float32, shape=[self.num_edge_types, None], name='type_to_num_incoming_edges')
+            tf.compat.v1.placeholder(dtype=tf.float32, shape=[self.num_edge_types, None], name='type_to_num_incoming_edges')
 
         model_ops['initial_node_features'] = placeholders['initial_node_features']
         model_ops['adjacency_lists'] = placeholders['adjacency_lists']
@@ -239,13 +239,13 @@ class Nb_Vehicles_Task(Sparse_Graph_Task):
                 pre-populated by the generic graph model values, and to
                 be extended with task-specific operations.
         """
-        placeholders['labels'] = tf.placeholder(tf.int32,shape=[None], name='labels')
+        placeholders['labels'] = tf.compat.v1.placeholder(tf.int32,shape=[None], name='labels')
 
         placeholders['graph_nodes_list'] = \
-            tf.placeholder(dtype=tf.int32, shape=[None], name='graph_nodes_list')
+            tf.compat.v1.placeholder(dtype=tf.int32, shape=[None], name='graph_nodes_list')
 
         placeholders['out_layer_dropout_keep_prob'] = \
-            tf.placeholder_with_default(input=tf.constant(1.0, dtype=tf.float32),
+            tf.compat.v1.placeholder_with_default(input=tf.constant(1.0, dtype=tf.float32),
                                         shape=[],
                                         name='out_layer_dropout_keep_prob')
 
@@ -271,22 +271,22 @@ class Nb_Vehicles_Task(Sparse_Graph_Task):
                                   )(final_node_representations)  # Shape [nb_node, Classes]
 
         # Sum up all nodes per-graph
-        per_graph_outputs = tf.unsorted_segment_sum(data=output_label_logits,
+        per_graph_outputs = tf.math.unsorted_segment_sum(data=output_label_logits,
                                                     segment_ids=placeholders['graph_nodes_list'],
                                                     num_segments=tf.cast(placeholders['num_graphs'],dtype=tf.int32))
 
-        correct_preds = tf.equal(tf.argmax(per_graph_outputs, axis=1, output_type=tf.int32),
+        correct_preds = tf.equal(tf.argmax(input=per_graph_outputs, axis=1, output_type=tf.int32),
                                  placeholders['labels'])
 
         losses = tf.nn.sparse_softmax_cross_entropy_with_logits(logits=per_graph_outputs,
                                                                 labels=placeholders['labels'])
 
-        total_loss = tf.reduce_sum(losses)
+        total_loss = tf.reduce_sum(input_tensor=losses)
 
-        number_correct_preds = tf.reduce_sum(tf.cast(correct_preds,tf.float32))
+        number_correct_preds = tf.reduce_sum(input_tensor=tf.cast(correct_preds,tf.float32))
         number_of_predictions = tf.cast(placeholders['num_graphs'],tf.float32)
         accuracy = number_correct_preds / number_of_predictions
-        tf.summary.scalar('accuracy', accuracy)
+        tf.compat.v1.summary.scalar('accuracy', accuracy)
 
         model_ops['task_metrics'] = {
             'loss': total_loss / number_of_predictions,

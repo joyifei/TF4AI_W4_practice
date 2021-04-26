@@ -177,7 +177,7 @@ class Env(object):
         self.n_nodes = args['n_nodes']
         self.n_cust = args['n_cust']
         self.input_dim = args['input_dim']
-        self.input_data = tf.placeholder(tf.float32,\
+        self.input_data = tf.compat.v1.placeholder(tf.float32,\
             shape=[None,self.n_nodes,self.input_dim])       # The dimension of the first (None) can be of any size
 
         self.input_pnt = self.input_data[:,:,:(self.input_dim -1)]  # all but demand
@@ -189,7 +189,7 @@ class Env(object):
         self.previous_x = self.input_data[:,self.n_nodes -1,0]  # get the location x of all the depots
         self.previous_y = self.input_data[:,self.n_nodes -1,1]  # get the location y of all the depots
 
-        self.batch_size = tf.shape(self.input_pnt)[0]
+        self.batch_size = tf.shape(input=self.input_pnt)[0]
 
         # To be defined later on
         self.time = None
@@ -295,7 +295,7 @@ class Env(object):
         d_sat = tf.minimum(tf.gather_nd(self.demand,batched_idx), self.load)
 
         # update the demand
-        d_scatter = tf.scatter_nd(batched_idx, d_sat, tf.cast(tf.shape(self.demand),tf.int64))      # sparse tensor containing d_sat for the interesting idx
+        d_scatter = tf.scatter_nd(batched_idx, d_sat, tf.cast(tf.shape(input=self.demand),tf.int64))      # sparse tensor containing d_sat for the interesting idx
         self.demand = tf.subtract(self.demand, d_scatter)
 
         # update load
@@ -335,7 +335,7 @@ class Env(object):
 
         self.mask += tf.concat( [tf.tile(tf.expand_dims(tf.cast(tf.equal(self.load,0),
             tf.float32),1), [1,self.n_cust]),
-            tf.expand_dims(tf.multiply(tf.cast(tf.greater(tf.reduce_sum(self.demand,1),0),tf.float32),
+            tf.expand_dims(tf.multiply(tf.cast(tf.greater(tf.reduce_sum(input_tensor=self.demand,axis=1),0),tf.float32),
                              tf.squeeze( tf.cast(tf.equal(idx,self.n_cust),tf.float32))),1)],1)
 
         # put the previous_x y as a matrix [batchsize * n_nodes]
@@ -387,7 +387,7 @@ def reward_func(sample_solution, decode_len=0.0, n_nodes=0.0, depot=None):
     if depot != None:
         counter = tf.zeros_like(depot)[:,0]
         depot_visits = tf.cast(tf.equal(sample_solution[0], depot), tf.float32)[:,0]
-        tf.assert_equal(depot_visits,tf.ones_like(depot_visits))
+        tf.compat.v1.assert_equal(depot_visits,tf.ones_like(depot_visits))
 
         for i in range(1,len(sample_solution)):
             interm_depot = tf.cast(tf.equal(sample_solution[i], depot), tf.float32)[:,0]
@@ -401,7 +401,7 @@ def reward_func(sample_solution, decode_len=0.0, n_nodes=0.0, depot=None):
         max_length = tf.stack([depot for d in range(decode_len)],0)
         interm_max_lens = tf.multiply((sample_solution[:,:,1] - max_length[:,:,1]),tf.cos(tf.scalar_mul(0.5, (sample_solution[:,:,0] + max_length[:,:,0]))))
         distance_decoded = tf.scalar_mul(6371, tf.sqrt(tf.square(interm_max_lens) + tf.square(sample_solution[:,:,0] - max_length[:,:,0])))
-        max_lens_decoded = tf.reduce_sum(distance_decoded,0)
+        max_lens_decoded = tf.reduce_sum(input_tensor=distance_decoded,axis=0)
 
     # make sure that we only take x,y (and not b_tw and e_tw)
     sample_solution = sample_solution[:,:,:2]
@@ -410,8 +410,8 @@ def reward_func(sample_solution, decode_len=0.0, n_nodes=0.0, depot=None):
          sample_solution[:-1]),0)
     # get the reward based on the route lengths
 
-    route_lens_decoded = tf.reduce_sum(tf.pow(tf.reduce_sum(tf.pow(\
-        (sample_solution_tilted - sample_solution) ,2), 2) , .5), 0)
+    route_lens_decoded = tf.reduce_sum(input_tensor=tf.pow(tf.reduce_sum(input_tensor=tf.pow(\
+        (sample_solution_tilted - sample_solution) ,2), axis=2) , .5), axis=0)
 
     if not depot is None:
         # reward = tf.add(tf.scalar_mul(70.0,tf.scalar_mul(1.0/n_nodes,depot_visits)),tf.scalar_mul(30.0,tf.divide(route_lens_decoded,max_lens_decoded)))

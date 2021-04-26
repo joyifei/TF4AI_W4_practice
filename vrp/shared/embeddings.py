@@ -34,7 +34,7 @@ class LinearEmbedding(Embedding):
         '''
 
         super(LinearEmbedding,self).__init__('linear',embedding_dim)
-        self.project_emb = tf.layers.Conv1D(embedding_dim,1,
+        self.project_emb = tf.compat.v1.layers.Conv1D(embedding_dim,1,
             _scope=_scope+'Embedding/conv1d')
 
     def __call__(self,input_pnt):

@@ -65,12 +65,12 @@ class Sparse_Graph_Model(ABC):
         # Build the actual model
         random.seed(params['random_seed'])
         np.random.seed(params['random_seed'])
-        config = tf.ConfigProto()
+        config = tf.compat.v1.ConfigProto()
         config.gpu_options.allow_growth = True
         self.graph = tf.Graph()
-        self.sess = tf.Session(graph=self.graph, config=config)
+        self.sess = tf.compat.v1.Session(graph=self.graph, config=config)
         with self.graph.as_default():
-            tf.set_random_seed(self.params['random_seed'])
+            tf.compat.v1.set_random_seed(self.params['random_seed'])
             self.__make_model()
 
     @property
@@ -84,13 +84,13 @@ class Sparse_Graph_Model(ABC):
     # -------------------- Model Saving/Loading --------------------
     def initialize_model(self) -> None:
         with self.sess.graph.as_default():
-            init_op = tf.group(tf.global_variables_initializer(),
-                               tf.local_variables_initializer())
+            init_op = tf.group(tf.compat.v1.global_variables_initializer(),
+                               tf.compat.v1.local_variables_initializer())
             self.sess.run(init_op)
 
     def save_model(self, path: str) -> None:
         vars_to_retrieve = {}  # type: Dict[str, tf.Tensor]
-        for variable in self.sess.graph.get_collection(tf.GraphKeys.GLOBAL_VARIABLES):
+        for variable in self.sess.graph.get_collection(tf.compat.v1.GraphKeys.GLOBAL_VARIABLES):
             assert variable.name not in vars_to_retrieve
             vars_to_retrieve[variable.name] = variable
         weights_to_save = self.sess.run(vars_to_retrieve)
@@ -109,10 +109,10 @@ class Sparse_Graph_Model(ABC):
     def load_weights(self, weights: Dict[str, np.ndarray]) -> None:
         with self.graph.as_default():
             variables_to_initialize = []
-            with tf.name_scope("restore"):
+            with tf.compat.v1.name_scope("restore"):
                 restore_ops = []
                 used_vars = set()
-                for variable in self.graph.get_collection(tf.GraphKeys.GLOBAL_VARIABLES):
+                for variable in self.graph.get_collection(tf.compat.v1.GraphKeys.GLOBAL_VARIABLES):
                     used_vars.add(variable.name)
                     if variable.name in weights:
                         restore_ops.append(variable.assign(weights[variable.name]))
@@ -122,7 +122,7 @@ class Sparse_Graph_Model(ABC):
                 for var_name in weights:
                     if var_name not in used_vars:
                         print('Saved weights for %s not used by model.' % var_name)
-                restore_ops.append(tf.variables_initializer(variables_to_initialize))
+                restore_ops.append(tf.compat.v1.variables_initializer(variables_to_initialize))
                 self.sess.run(restore_ops)
 
     # -------------------- Model Construction --------------------
@@ -130,30 +130,30 @@ class Sparse_Graph_Model(ABC):
 
         self.task.make_task_input_model(self.__placeholders, self.__ops)
 
-        with tf.variable_scope("graph_model"):
+        with tf.compat.v1.variable_scope("graph_model"):
             self.__placeholders['num_graphs'] = \
-                tf.placeholder(dtype=tf.int64, shape=[], name='num_graphs')
+                tf.compat.v1.placeholder(dtype=tf.int64, shape=[], name='num_graphs')
             self.__placeholders['graph_layer_input_dropout_keep_prob'] = \
-                tf.placeholder_with_default(1.0, shape=[], name='graph_layer_input_dropout_keep_prob')
+                tf.compat.v1.placeholder_with_default(1.0, shape=[], name='graph_layer_input_dropout_keep_prob')
 
             self.__build_graph_propagation_model()
 
         self.task.make_task_output_model(self.__placeholders, self.__ops)
 
-        tf.summary.scalar('loss', self.__ops['task_metrics']['loss'])
+        tf.compat.v1.summary.scalar('loss', self.__ops['task_metrics']['loss'])
         total_num_graphs_variable = \
-            tf.get_variable(name='total_num_graphs',
+            tf.compat.v1.get_variable(name='total_num_graphs',
                             shape=(),
                             dtype=tf.int64,
-                            initializer=tf.zeros_initializer,
+                            initializer=tf.compat.v1.zeros_initializer,
                             trainable=False)
         self.__ops['total_num_graphs'] = \
-            tf.assign_add(total_num_graphs_variable, self.__placeholders['num_graphs'])
-        self.__ops['tf_summaries'] = tf.summary.merge_all()
+            tf.compat.v1.assign_add(total_num_graphs_variable, self.__placeholders['num_graphs'])
+        self.__ops['tf_summaries'] = tf.compat.v1.summary.merge_all()
 
         # Print some stats:
         num_pars = 0
-        for variable in tf.trainable_variables():
+        for variable in tf.compat.v1.trainable_variables():
             num_pars += np.prod([dim.value for dim in variable.get_shape()])
         self.log_line("Model has %i parameters." % num_pars)
 
@@ -176,7 +176,7 @@ class Sparse_Graph_Model(ABC):
         cur_node_representations = self.__ops['projected_node_features']
         last_residual_representations = tf.zeros_like(cur_node_representations)
         for layer_idx in range(self.params['graph_num_layers']):
-            with tf.variable_scope('gnn_layer_%i' % layer_idx):
+            with tf.compat.v1.variable_scope('gnn_layer_%i' % layer_idx):
                 cur_node_representations = \
                     tf.nn.dropout(cur_node_representations, rate= 1- self.__placeholders['graph_layer_input_dropout_keep_prob'])
                 if layer_idx % self.params['graph_residual_connection_every_num_layers'] == 0:
@@ -227,7 +227,7 @@ class Sparse_Graph_Model(ABC):
         raise Exception("Models have to implement _apply_gnn_layer!")
 
     def __make_train_step(self):
-        trainable_vars = self.sess.graph.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES)
+        trainable_vars = self.sess.graph.get_collection(tf.compat.v1.GraphKeys.TRAINABLE_VARIABLES)
 
         learning_rate = self.params['learning_rate']
 
@@ -242,13 +242,13 @@ class Sparse_Graph_Model(ABC):
 
         optimizer_name = self.params['optimizer'].lower()
         if optimizer_name == 'sgd':
-            optimizer = tf.train.GradientDescentOptimizer(learning_rate=learning_rate)
+            optimizer = tf.compat.v1.train.GradientDescentOptimizer(learning_rate=learning_rate)
         elif optimizer_name == 'rmsprop':
-            optimizer = tf.train.RMSPropOptimizer(learning_rate=learning_rate,
+            optimizer = tf.compat.v1.train.RMSPropOptimizer(learning_rate=learning_rate,
                                                   decay=self.params['learning_rate_decay'],
                                                   momentum=self.params['momentum'])
         elif optimizer_name == 'adam':
-            optimizer = tf.train.AdamOptimizer(learning_rate=learning_rate)
+            optimizer = tf.compat.v1.train.AdamOptimizer(learning_rate=learning_rate)
         else:
             raise Exception('Unknown optimizer "%s".' % (self.params['optimizer']))
 
@@ -267,7 +267,7 @@ class Sparse_Graph_Model(ABC):
                     data: Iterable[Any],
                     data_fold: DataFold,
                     quiet: Optional[bool] = False,
-                    summary_writer: Optional[tf.summary.FileWriter] = None) \
+                    summary_writer: Optional[tf.summary.create_file_writer] = None) \
             -> Tuple[float, List[Dict[str, Any]], int, float, float, float,float]:
         """
         Run one epoch of the neural network
@@ -334,8 +334,8 @@ class Sparse_Graph_Model(ABC):
         with self.graph.as_default():
             if tf_summary_path is not None:
                 os.makedirs(tf_summary_path, exist_ok=True)
-                train_writer = tf.summary.FileWriter(os.path.join(tf_summary_path, "train"), graph=self.graph)
-                valid_writer = tf.summary.FileWriter(os.path.join(tf_summary_path, "valid"))
+                train_writer = tf.compat.v1.summary.FileWriter(os.path.join(tf_summary_path, "train"), graph=self.graph)
+                valid_writer = tf.compat.v1.summary.FileWriter(os.path.join(tf_summary_path, "valid"))
             else:
                 train_writer, valid_writer = None, None
 

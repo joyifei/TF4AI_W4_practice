@@ -147,12 +147,12 @@ class Sparse_Graph_Task(ABC):
                 be extended with task-specific operations.
         """
         placeholders['initial_node_features'] = \
-            tf.placeholder(dtype=tf.float32, shape=[None, self.initial_node_feature_size], name='initial_node_features')
+            tf.compat.v1.placeholder(dtype=tf.float32, shape=[None, self.initial_node_feature_size], name='initial_node_features')
         placeholders['adjacency_lists'] = \
-            [tf.placeholder(dtype=tf.int32, shape=[None, 2], name='adjacency_e%s' % e)
+            [tf.compat.v1.placeholder(dtype=tf.int32, shape=[None, 2], name='adjacency_e%s' % e)
                 for e in range(self.num_edge_types)]
         placeholders['type_to_num_incoming_edges'] = \
-            tf.placeholder(dtype=tf.float32, shape=[self.num_edge_types, None], name='type_to_num_incoming_edges')
+            tf.compat.v1.placeholder(dtype=tf.float32, shape=[self.num_edge_types, None], name='type_to_num_incoming_edges')
 
         model_ops['initial_node_features'] = placeholders['initial_node_features']
         model_ops['adjacency_lists'] = placeholders['adjacency_lists']

@@ -20,7 +20,7 @@ class FullGraphEmbedding(Embedding):
         self._scale = [5,12,25,50,100]
         self._scale = [i * np.sqrt(2)/100 for i in self._scale]     # rescale to the square
 
-        self.drop_out = tf.placeholder(tf.float32,name='embedder_graph_dropout')
+        self.drop_out = tf.compat.v1.placeholder(tf.float32,name='embedder_graph_dropout')
         self.params = {
             'graph_num_layers': 8,
             'graph_num_timesteps_per_layer': 3,
@@ -105,7 +105,7 @@ class FullGraphEmbedding(Embedding):
         batch_features = tf.reshape(input_tf,[-1,self.nb_feat])
 
         input_dist = input_tf[:,:,:2]
-        square_input = tf.reduce_sum(tf.square(input_dist), 2)
+        square_input = tf.reduce_sum(input_tensor=tf.square(input_dist), axis=2)
         row = tf.reshape(square_input, [-1,self.n_nodes,1])
         col= tf.reshape(square_input,[-1,1,self.n_nodes])
         dist_matrix = tf.sqrt(tf.maximum(row - 2 * tf.matmul(input_dist,input_dist,False,True) + col,0.0))
@@ -113,20 +113,20 @@ class FullGraphEmbedding(Embedding):
         list_pair_edge = []
         list_num_incoming_ege = []
         not_masked = tf.ones_like(dist_matrix,dtype=tf.bool)
-        tf.matrix_set_diag(not_masked,tf.zeros_like(not_masked[0,:,:]))
+        tf.linalg.set_diag(not_masked,tf.zeros_like(not_masked[0,:,:]))
 
         for i in range(len(self._scale)):
             true_for_edge = tf.less_equal(dist_matrix,self._scale[i])
             true_for_edge = tf.logical_and(not_masked,true_for_edge)
 
-            indices = tf.cast(tf.where(true_for_edge),dtype=tf.int32)
+            indices = tf.cast(tf.compat.v1.where(true_for_edge),dtype=tf.int32)
             offset = self.n_nodes * indices[:,0]    # get all batch value
             offset = tf.expand_dims(offset,axis=1)
             offset = tf.tile(offset,[1,2])
             true_indices_nodes = offset + indices[:,1:3]
             list_pair_edge.append(true_indices_nodes)
 
-            num_incoming = tf.reduce_sum(tf.cast(true_for_edge,dtype=tf.int32), 1)
+            num_incoming = tf.reduce_sum(input_tensor=tf.cast(true_for_edge,dtype=tf.int32), axis=1)
             num_incoming = tf.squeeze(tf.reshape(num_incoming,[1,-1]),0)
 
             list_num_incoming_ege.append(tf.cast(num_incoming,dtype=tf.float32))
