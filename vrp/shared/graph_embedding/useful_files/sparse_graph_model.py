@@ -154,7 +154,7 @@ class Sparse_Graph_Model(ABC):
         # Print some stats:
         num_pars = 0
         for variable in tf.compat.v1.trainable_variables():
-            num_pars += np.prod([dim.value for dim in variable.get_shape()])
+            num_pars += np.prod([dim for dim in variable.get_shape()])
         self.log_line("Model has %i parameters." % num_pars)
 
         # Now add the optimizer bits:
