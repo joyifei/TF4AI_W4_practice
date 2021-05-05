@@ -389,8 +389,8 @@ class Sparse_Graph_Model(ABC):
         with self.graph.as_default():
             self.log_line("== Running Test on ==")
 
-            data = self.task.load_eval_data_from_path(path='data/vrp-size-5000-len-11-results-or_tools.txt')
-            # data = self.task.load_eval_data_from_input(input_env)
+            #data = self.task.load_eval_data_from_path(path='data/vrp-size-5000-len-11-results-or_tools.txt')
+            data = self.task.load_eval_data_from_input(input_env)
             test_loss, test_task_metrics, test_num_graphs,test_time, final_represenation = self.__run_epoch("Test", data, DataFold.TEST)
 
             self.log_line("Loss %.5f on %i graphs" % (test_loss, test_num_graphs))
