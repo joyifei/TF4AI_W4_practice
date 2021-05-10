@@ -182,7 +182,7 @@ def main(args, prt):
 
 if __name__ == "__main__":
     embeddings.test()
-    assert False
+    #assert False
     args, prt = ParseParams()
     args['is_train'] = True
     # args['infer_type'] = 'single'
