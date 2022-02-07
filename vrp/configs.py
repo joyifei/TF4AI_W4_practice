@@ -105,7 +105,7 @@ def ParseParams():
     args = initialize_task_settings(args,args['task'])
 
     # print the run args
-    for key, value in sorted(args.items()):
-        prt.print_out("{}: {}".format(key,value))
+    #for key, value in sorted(args.items()):
+    #    prt.print_out("{}: {}".format(key,value))
 
     return args, prt
